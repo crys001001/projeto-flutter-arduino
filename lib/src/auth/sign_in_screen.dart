@@ -4,6 +4,7 @@ import 'package:flutter_application/src/common_widgets/custom_text_fild.dart';
 import 'package:flutter_application/src/auth/sign_up_screen.dart';
 import 'package:flutter_application/src/base/base_screen.dart';
 import 'package:flutter_application/src/pages_routes/app_pages.dart';
+import 'package:flutter_application/src/services/validators.dart';
 import 'package:get/get.dart';
 import 'package:get/route_manager.dart';
 
@@ -94,15 +95,7 @@ class SignInScreen extends StatelessWidget {
                         controller: emailController,
                         icon: Icons.email,
                         label: 'Email',
-                        validator: (email) {
-                          if (email == null || email.isEmpty) {
-                            return 'Digite seu email!';
-                          }
-
-                          if (!email.isEmail) return 'Digite um email valido';
-
-                          return null;
-                        },
+                        validator: emailValidator,
                       ),
                       //senha
                       CustomTextFild(
@@ -110,17 +103,7 @@ class SignInScreen extends StatelessWidget {
                         icon: Icons.lock,
                         label: 'Senha',
                         isSecret: true,
-                        validator: (password) {
-                          if (password == null || password.isEmpty) {
-                            return 'Digite sua Senha!';
-                          }
-
-                          if (password.length < 7) {
-                            return 'Digite uma senha com pelo menos 7 caracteres.';
-                          }
-
-                          return null;
-                        },
+                        validator: passwordValidator,
                       ),
 
                       //acessar
@@ -144,7 +127,7 @@ class SignInScreen extends StatelessWidget {
                             } else {
                               print('Campos não validos!');
                             }
-                            // Get.toNamed(PagesRoutes.BaseRoute);
+                            Get.toNamed(PagesRoutes.BaseRoute);
                           },
 
                           child: const Text(

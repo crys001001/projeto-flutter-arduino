@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_application/src/pages/profile/profile_tab.dart';
+
+import 'package:flutter_application/src/pages/profile_tab.dart';
 
 class BaseScreen extends StatefulWidget {
   const BaseScreen({super.key});
