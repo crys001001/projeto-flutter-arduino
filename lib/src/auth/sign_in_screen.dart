@@ -1,19 +1,15 @@
 import 'package:animated_text_kit/animated_text_kit.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_application/src/common_widgets/custom_text_fild.dart';
-import 'package:flutter_application/src/auth/sign_up_screen.dart';
-import 'package:flutter_application/src/base/base_screen.dart';
+import 'package:flutter_application/src/components/forgot_password_dialog.dart';
 import 'package:flutter_application/src/pages_routes/app_pages.dart';
 import 'package:flutter_application/src/services/validators.dart';
 import 'package:get/get.dart';
-import 'package:get/route_manager.dart';
 
 class SignInScreen extends StatelessWidget {
   SignInScreen({super.key});
 
   final _formKey = GlobalKey<FormState>();
-
-  // controlador de campos
   final emailController = TextEditingController();
   final passwordController = TextEditingController();
 
@@ -29,11 +25,11 @@ class SignInScreen extends StatelessWidget {
           width: size.width,
           child: Column(
             children: [
+              // ─────── LOGO + ANIMAÇÃO ───────
               Expanded(
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    //nome do app
                     const Text.rich(
                       TextSpan(
                         style: TextStyle(fontSize: 50),
@@ -52,19 +48,23 @@ class SignInScreen extends StatelessWidget {
                         ],
                       ),
                     ),
+                    const SizedBox(height: 5),
                     SizedBox(
                       height: 30,
                       child: DefaultTextStyle(
-                        style: const TextStyle(fontSize: 25),
+                        style: const TextStyle(
+                          fontSize: 25,
+                          color: Colors.white,
+                        ),
                         child: AnimatedTextKit(
                           pause: Duration.zero,
                           repeatForever: true,
                           animatedTexts: [
                             FadeAnimatedText('Detecção de Movimento'),
                             FadeAnimatedText('App inteligente'),
-                            FadeAnimatedText('Sensor de Presença '),
+                            FadeAnimatedText('Sensor de Presença'),
                             FadeAnimatedText('Mais segurança'),
-                            FadeAnimatedText('Ultra Rapido'),
+                            FadeAnimatedText('Ultra Rápido'),
                           ],
                         ),
                       ),
@@ -73,16 +73,14 @@ class SignInScreen extends StatelessWidget {
                 ),
               ),
 
-              //Formulario
+              // ─────── FORMULÁRIO ───────
               Container(
                 padding: const EdgeInsets.symmetric(
                   horizontal: 32,
                   vertical: 40,
                 ),
-
                 decoration: const BoxDecoration(
                   color: Colors.white,
-
                   borderRadius: BorderRadius.vertical(top: Radius.circular(45)),
                 ),
                 child: Form(
@@ -90,14 +88,16 @@ class SignInScreen extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      //eemail
+                      // Email
                       CustomTextFild(
                         controller: emailController,
                         icon: Icons.email,
                         label: 'Email',
                         validator: emailValidator,
+                        textInputType: TextInputType.emailAddress,
                       ),
-                      //senha
+
+                      // Senha
                       CustomTextFild(
                         controller: passwordController,
                         icon: Icons.lock,
@@ -106,30 +106,30 @@ class SignInScreen extends StatelessWidget {
                         validator: passwordValidator,
                       ),
 
-                      //acessar
+                      const SizedBox(height: 16),
+
+                      // Botão “Acessar”
                       SizedBox(
                         height: 50,
-
                         child: ElevatedButton(
                           style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.white,
+                            foregroundColor: Colors.blueAccent,
+                            side: const BorderSide(
+                              color: Colors.blueAccent,
+                              width: 2.3,
+                            ),
+                            elevation: 0,
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(18),
                             ),
                           ),
-
-                          //recuperacao de texto valido
                           onPressed: () {
                             if (_formKey.currentState!.validate()) {
-                              String email = emailController.text;
-                              String password = passwordController.text;
-
-                              print('Email: $email - Senha : $password');
-                            } else {
-                              print('Campos não validos!');
+                              // TODO: autenticar usuário
                             }
                             Get.toNamed(PagesRoutes.BaseRoute);
                           },
-
                           child: const Text(
                             'Acessar',
                             style: TextStyle(fontSize: 18),
@@ -137,11 +137,16 @@ class SignInScreen extends StatelessWidget {
                         ),
                       ),
 
-                      // esqueceu a senha
+                      // “Esqueceu a senha?” abre modal
                       Align(
                         alignment: Alignment.centerRight,
                         child: TextButton(
-                          onPressed: () {},
+                          onPressed: () {
+                            showDialog(
+                              context: context,
+                              builder: (_) => const ForgotPasswordDialog(),
+                            );
+                          },
                           child: const Text(
                             'Esqueceu a senha?',
                             style: TextStyle(color: Colors.blueAccent),
@@ -149,7 +154,7 @@ class SignInScreen extends StatelessWidget {
                         ),
                       ),
 
-                      // divisor
+                      // Divisor “ou”
                       Padding(
                         padding: const EdgeInsets.only(bottom: 10),
                         child: Row(
@@ -174,17 +179,15 @@ class SignInScreen extends StatelessWidget {
                         ),
                       ),
 
-                      // botao criar conta
+                      // Botão “Criar conta”
                       SizedBox(
                         height: 50,
-                        child: OutlinedButton(
-                          style: OutlinedButton.styleFrom(
+                        child: ElevatedButton(
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.blueAccent,
+                            foregroundColor: Colors.white,
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(18),
-                            ),
-                            side: BorderSide(
-                              width: 2.3,
-                              color: Colors.blueAccent,
                             ),
                           ),
                           onPressed: () {

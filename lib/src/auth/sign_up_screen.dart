@@ -1,3 +1,5 @@
+// lib/src/auth/sign_up_screen.dart
+
 import 'package:flutter/material.dart';
 import 'package:flutter_application/src/common_widgets/custom_text_fild.dart';
 import 'package:flutter_application/src/services/validators.dart';
@@ -20,14 +22,14 @@ class SignUpScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final Size = MediaQuery.of(context).size;
+    final size = MediaQuery.of(context).size;
 
     return Scaffold(
       backgroundColor: Colors.blueAccent,
       body: SingleChildScrollView(
         child: SizedBox(
-          height: Size.height,
-          width: Size.width,
+          height: size.height,
+          width: size.width,
           child: Stack(
             children: [
               Column(
@@ -45,7 +47,7 @@ class SignUpScreen extends StatelessWidget {
                     ),
                   ),
 
-                  // formulario
+                  // Formulário branco
                   Container(
                     padding: const EdgeInsets.symmetric(
                       horizontal: 32,
@@ -94,11 +96,15 @@ class SignUpScreen extends StatelessWidget {
                             validator: cpfValidator,
                           ),
 
+                          const SizedBox(height: 20),
+
+                          // Botão Cadastrar Usuario: fundo azulAccent, texto branco
                           SizedBox(
                             height: 50,
-
                             child: ElevatedButton(
                               style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.blueAccent,
+                                foregroundColor: Colors.white,
                                 shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(18),
                                 ),
@@ -107,7 +113,7 @@ class SignUpScreen extends StatelessWidget {
                                 _formKey.currentState!.validate();
                               },
                               child: const Text(
-                                'Cadastrar Usuario',
+                                'Cadastrar Usuário',
                                 style: TextStyle(fontSize: 18),
                               ),
                             ),
@@ -119,14 +125,13 @@ class SignUpScreen extends StatelessWidget {
                 ],
               ),
 
+              // Botão voltar
               Positioned(
                 left: 10,
                 top: 10,
                 child: SafeArea(
                   child: IconButton(
-                    onPressed: () {
-                      Navigator.of(context).pop();
-                    },
+                    onPressed: () => Navigator.of(context).pop(),
                     icon: const Icon(Icons.arrow_back_ios, color: Colors.white),
                   ),
                 ),
