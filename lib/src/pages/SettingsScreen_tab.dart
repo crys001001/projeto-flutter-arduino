@@ -1,5 +1,3 @@
-// lib/src/pages/settings_screen.dart
-
 import 'package:flutter/material.dart';
 import 'package:flutter_application/src/common_widgets/custom_text_fild.dart';
 
