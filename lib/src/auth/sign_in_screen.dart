@@ -6,6 +6,7 @@ import 'package:flutter_application/src/components/forgot_password_dialog.dart';
 import 'package:flutter_application/src/pages_routes/app_pages.dart';
 import 'package:flutter_application/src/services/validators.dart';
 import 'package:get/get.dart';
+import 'package:flutter_application/src/pages_routes/app_pages.dart';
 
 class SignInScreen extends StatelessWidget {
   SignInScreen({super.key});
@@ -224,7 +225,7 @@ class SignInScreen extends StatelessWidget {
                                       builder: (_) => const AdminAccessDialog(),
                                     );
                                     if (result == true) {
-                                      Get.toNamed(PagesRoutes.adminTabRoute);
+                                      Get.toNamed(PagesRoutes.auditRoute);
                                     }
                                   },
                                   child: const Text(
