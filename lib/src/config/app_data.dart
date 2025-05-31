@@ -1,9 +1,14 @@
 import 'package:flutter_application/src/models/user_model.dart';
 
-UserModel user = UserModel(
-  phone: '99 9 9999-9999',
-  cpf: '999.999.999-99',
-  email: 'joao@email.com',
-  name: 'joao',
-  password: '',
-);
+/// Usuário atualmente logado no app. Pode ser null se não estiver logado.
+UserModel? user;
+
+/// Atualiza o usuário global (substitui por um novo)
+void updateUser(UserModel newUser) {
+  user = newUser;
+}
+
+/// Limpa os dados do usuário (ex: ao fazer logout)
+void clearUser() {
+  user = null;
+}

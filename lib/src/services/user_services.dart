@@ -1,46 +1,96 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
-import '../config/app_data.dart' as appData;
+import 'package:flutter_application/src/models/user_model.dart';
 
 class UserService {
-  static const String baseUrl = 'https://suaapi.com'; // Troque pela URL real
+  static const String baseUrl =
+      'https://suaapi.com/api'; // Troque pela sua URL real
 
+  /// Busca os dados do perfil do usuário na API
+  static Future<UserModel?> fetchUserProfile() async {
+    final url = Uri.parse('$baseUrl/user/profile');
+
+    try {
+      final response = await http.get(
+        url,
+        headers: {
+          'Content-Type': 'application/json',
+          // 'Authorization': 'Bearer seu_token_aqui', // se precisar autenticação
+        },
+      );
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        return UserModel.fromJson(data);
+      } else {
+        print('Erro ao buscar perfil: ${response.body}');
+        return null;
+      }
+    } catch (e) {
+      print('Exception fetchUserProfile: $e');
+      return null;
+    }
+  }
+
+  /// Atualiza o perfil do usuário (nome, telefone e email)
   static Future<bool> updateUserProfile({
     required String name,
     required String phone,
-    required String cpf,
+    required String email,
+    required String password,
   }) async {
+    final url = Uri.parse('$baseUrl/user/update-profile');
+
     try {
       final response = await http.put(
-        Uri.parse('$baseUrl/users/update'), // Endpoint real aqui
+        url,
         headers: {
           'Content-Type': 'application/json',
-          'Authorization':
-              'Bearer SEU_TOKEN_AQUI', // Coloque seu token aqui, se necessário
+          // 'Authorization': 'Bearer seu_token_aqui', // se precisar autenticação
         },
         body: jsonEncode({
-          'email': appData.user.email, // chave identificadora
           'name': name,
           'phone': phone,
-          'cpf': cpf,
+          'email': email,
+          'password': password, // Incluindo senha para confirmação
         }),
       );
 
       if (response.statusCode == 200) {
-        // Atualiza localmente também
-        appData.user.name = name;
-        appData.user.phone = phone;
-        appData.user.cpf = cpf;
         return true;
       } else {
         print('Erro ao atualizar perfil: ${response.body}');
         return false;
       }
     } catch (e) {
-      print('Erro de conexão: $e');
+      print('Exception updateUserProfile: $e');
       return false;
     }
   }
 
-  static deleteAccount({required String password}) {}
+  /// Exclui a conta do usuário mediante confirmação de senha
+  static Future<bool> deleteAccount({required String password}) async {
+    final url = Uri.parse('$baseUrl/user/delete-account');
+
+    try {
+      final response = await http.delete(
+        url,
+        headers: {
+          'Content-Type': 'application/json',
+          // 'Authorization': 'Bearer seu_token_aqui', // se precisar autenticação
+        },
+        body: jsonEncode({'password': password}),
+      );
+
+      if (response.statusCode == 200) {
+        return true;
+      } else {
+        print('Erro ao excluir conta: ${response.body}');
+        return false;
+      }
+    } catch (e) {
+      print('Exception deleteAccount: $e');
+      return false;
+    }
+  }
 }

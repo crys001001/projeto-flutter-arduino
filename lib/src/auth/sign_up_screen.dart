@@ -2,12 +2,17 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_application/src/base/base_screen.dart';
 import 'package:flutter_application/src/common_widgets/custom_text_fild.dart';
+
+import 'package:flutter_application/src/models/user_model.dart';
+import 'package:flutter_application/src/pages_routes/app_pages.dart';
+import 'package:flutter_application/src/services/user_controller.dart';
 import 'package:flutter_application/src/services/validators.dart';
 import 'package:mask_text_input_formatter/mask_text_input_formatter.dart';
 import 'package:http/http.dart' as http;
+import 'package:get/get.dart';
 
 class SignUpScreen extends StatefulWidget {
-  SignUpScreen({super.key});
+  const SignUpScreen({super.key});
 
   @override
   State<SignUpScreen> createState() => _SignUpScreenState();
@@ -25,12 +30,13 @@ class _SignUpScreenState extends State<SignUpScreen> {
   );
 
   final _formKey = GlobalKey<FormState>();
+  final emailController = TextEditingController();
+  final passwordController = TextEditingController();
+  final nameController = TextEditingController();
+  final phoneController = TextEditingController();
+  final cpfController = TextEditingController();
 
-  final TextEditingController emailController = TextEditingController();
-  final TextEditingController passwordController = TextEditingController();
-  final TextEditingController nameController = TextEditingController();
-  final TextEditingController phoneController = TextEditingController();
-  final TextEditingController cpfController = TextEditingController();
+  final UserController userController = Get.find<UserController>();
 
   bool isLoading = false;
 
@@ -41,14 +47,13 @@ class _SignUpScreenState extends State<SignUpScreen> {
       isLoading = true;
     });
 
-    final url = Uri.parse('https://suaapi.com/signup'); // Troque pela sua URL
-
+    final url = Uri.parse('http://10.0.2.2:3000/cadastrar');
     final body = {
-      'email': emailController.text,
-      'password': passwordController.text,
-      'name': nameController.text,
-      'phone': phoneController.text,
-      'cpf': cpfController.text,
+      'name': nameController.text.trim(),
+      'email': emailController.text.trim(),
+      'phone': phoneController.text.trim(),
+      'cpf': cpfController.text.trim(),
+      'senha': passwordController.text.trim(),
     };
 
     try {
@@ -58,23 +63,34 @@ class _SignUpScreenState extends State<SignUpScreen> {
         body: jsonEncode(body),
       );
 
-      if (response.statusCode == 200 || response.statusCode == 201) {
+      if (response.statusCode == 201) {
+        // Atualiza o usuário no UserController
+        userController.setUser(
+          UserModel(
+            name: nameController.text.trim(),
+            email: emailController.text.trim(),
+            phone: phoneController.text.trim(),
+            cpf: cpfController.text.trim(),
+            password: passwordController.text.trim(),
+          ),
+        );
+
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Usuário cadastrado com sucesso!')),
         );
 
-        Navigator.of(context).pushReplacement(
-          MaterialPageRoute(builder: (_) => const BaseScreen()),
-        );
+        Get.offAllNamed(PagesRoutes.BaseRoute);
       } else {
+        final errorMessage =
+            jsonDecode(response.body)['message'] ?? 'Erro ao cadastrar usuário';
         ScaffoldMessenger.of(
           context,
-        ).showSnackBar(SnackBar(content: Text('Erro: ${response.body}')));
+        ).showSnackBar(SnackBar(content: Text(errorMessage)));
       }
     } catch (e) {
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(SnackBar(content: Text('Erro ao conectar com a API: $e')));
+      ).showSnackBar(SnackBar(content: Text('Erro na conexão: $e')));
     } finally {
       setState(() {
         isLoading = false;
@@ -94,34 +110,50 @@ class _SignUpScreenState extends State<SignUpScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final size = MediaQuery.of(context).size;
-
     return Scaffold(
       backgroundColor: Colors.blueAccent,
-      body: SingleChildScrollView(
-        child: SizedBox(
-          height: size.height,
-          width: size.width,
-          child: Stack(
-            children: [
-              Column(
-                children: [
-                  const Expanded(
-                    child: Center(
-                      child: Text(
-                        'Cadastro',
+      body: SafeArea(
+        child: Column(
+          children: [
+            Expanded(
+              flex: 1,
+              child: Center(
+                child: Text.rich(
+                  TextSpan(
+                    style: const TextStyle(fontSize: 50),
+                    children: [
+                      const TextSpan(
+                        text: 'Presence',
                         style: TextStyle(
                           color: Colors.white,
-                          fontSize: 50,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
-                    ),
+                      const TextSpan(
+                        text: ' +',
+                        style: TextStyle(color: Colors.red),
+                      ),
+                      TextSpan(
+                        text: '\nCrie sua conta',
+                        style: TextStyle(
+                          color: Colors.white.withOpacity(0.9),
+                          fontWeight: FontWeight.normal,
+                          fontSize: 20,
+                        ),
+                      ),
+                    ],
                   ),
-                  Container(
+                ),
+              ),
+            ),
+            Flexible(
+              flex: 1,
+              child: LayoutBuilder(
+                builder: (context, constraints) {
+                  return Container(
                     padding: const EdgeInsets.symmetric(
                       horizontal: 32,
-                      vertical: 40,
+                      vertical: 24,
                     ),
                     decoration: const BoxDecoration(
                       color: Colors.white,
@@ -129,88 +161,127 @@ class _SignUpScreenState extends State<SignUpScreen> {
                         top: Radius.circular(45),
                       ),
                     ),
-                    child: Form(
-                      key: _formKey,
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: [
-                          CustomTextFild(
-                            controller: emailController,
-                            icon: Icons.email,
-                            label: 'Email',
-                            validator: emailValidator,
-                            textInputType: TextInputType.emailAddress,
-                          ),
-                          CustomTextFild(
-                            controller: passwordController,
-                            icon: Icons.lock,
-                            label: 'Senha',
-                            validator: passwordValidator,
-                            isSecret: true,
-                          ),
-                          CustomTextFild(
-                            controller: nameController,
-                            icon: Icons.person,
-                            label: 'Nome',
-                            validator: nameValidator,
-                          ),
-                          CustomTextFild(
-                            controller: phoneController,
-                            icon: Icons.phone,
-                            label: 'Celular',
-                            inputFormatters: [phoneFormatter],
-                            textInputType: TextInputType.phone,
-                            validator: phoneValidator,
-                          ),
-                          CustomTextFild(
-                            controller: cpfController,
-                            icon: Icons.file_copy,
-                            label: 'CPF',
-                            inputFormatters: [cpffomartter],
-                            textInputType: TextInputType.number,
-                            validator: cpfValidator,
-                          ),
-                          const SizedBox(height: 20),
-                          SizedBox(
-                            height: 50,
-                            child: ElevatedButton(
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: Colors.blueAccent,
-                                foregroundColor: Colors.white,
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(18),
+                    child: SingleChildScrollView(
+                      physics: const NeverScrollableScrollPhysics(),
+                      child: ConstrainedBox(
+                        constraints: BoxConstraints(
+                          minHeight: constraints.maxHeight,
+                        ),
+                        child: IntrinsicHeight(
+                          child: Form(
+                            key: _formKey,
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.stretch,
+                              children: [
+                                CustomTextFild(
+                                  controller: nameController,
+                                  icon: Icons.person,
+                                  label: 'Nome',
+                                  validator: (value) {
+                                    if (value == null || value.isEmpty) {
+                                      return 'Informe o nome';
+                                    }
+                                    return null;
+                                  },
                                 ),
-                              ),
-                              onPressed: isLoading ? null : signUp,
-                              child:
-                                  isLoading
-                                      ? const CircularProgressIndicator(
-                                        color: Colors.white,
-                                      )
-                                      : const Text(
-                                        'Cadastrar Usuário',
-                                        style: TextStyle(fontSize: 18),
+                                const SizedBox(height: 12),
+                                CustomTextFild(
+                                  controller: emailController,
+                                  icon: Icons.email,
+                                  label: 'Email',
+                                  validator: emailValidator,
+                                  textInputType: TextInputType.emailAddress,
+                                ),
+                                const SizedBox(height: 12),
+                                CustomTextFild(
+                                  controller: phoneController,
+                                  icon: Icons.phone,
+                                  label: 'Telefone',
+                                  validator: (value) {
+                                    if (value == null || value.isEmpty) {
+                                      return 'Informe o telefone';
+                                    }
+                                    if (!RegExp(
+                                      r'^\d{2} \d \d{4}-\d{4}$',
+                                    ).hasMatch(value)) {
+                                      return 'Telefone inválido';
+                                    }
+                                    return null;
+                                  },
+                                  inputFormatters: [phoneFormatter],
+                                  textInputType: TextInputType.phone,
+                                ),
+                                const SizedBox(height: 12),
+                                CustomTextFild(
+                                  controller: cpfController,
+                                  icon: Icons.assignment_ind,
+                                  label: 'CPF',
+                                  validator: (value) {
+                                    if (value == null || value.isEmpty) {
+                                      return 'Informe o CPF';
+                                    }
+                                    if (!RegExp(
+                                      r'^\d{3}\.\d{3}\.\d{3}-\d{2}$',
+                                    ).hasMatch(value)) {
+                                      return 'CPF inválido';
+                                    }
+                                    return null;
+                                  },
+                                  inputFormatters: [cpffomartter],
+                                  textInputType: TextInputType.number,
+                                ),
+                                const SizedBox(height: 12),
+                                CustomTextFild(
+                                  controller: passwordController,
+                                  icon: Icons.lock,
+                                  label: 'Senha',
+                                  isSecret: true,
+                                  validator: passwordValidator,
+                                ),
+                                const SizedBox(height: 16),
+                                SizedBox(
+                                  height: 50,
+                                  child: ElevatedButton(
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: Colors.blueAccent,
+                                      foregroundColor: Colors.white,
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(18),
                                       ),
+                                    ),
+                                    onPressed: isLoading ? null : signUp,
+                                    child:
+                                        isLoading
+                                            ? const CircularProgressIndicator(
+                                              color: Colors.white,
+                                            )
+                                            : const Text(
+                                              'Criar Conta',
+                                              style: TextStyle(fontSize: 18),
+                                            ),
+                                  ),
+                                ),
+                                const SizedBox(height: 20),
+                                TextButton(
+                                  onPressed: () {
+                                    Get.back();
+                                  },
+                                  child: const Text(
+                                    'Já tenho conta',
+                                    style: TextStyle(color: Colors.blueAccent),
+                                  ),
+                                ),
+                              ],
                             ),
                           ),
-                        ],
+                        ),
                       ),
                     ),
-                  ),
-                ],
+                  );
+                },
               ),
-              Positioned(
-                left: 10,
-                top: 10,
-                child: SafeArea(
-                  child: IconButton(
-                    onPressed: () => Navigator.of(context).pop(),
-                    icon: const Icon(Icons.arrow_back_ios, color: Colors.white),
-                  ),
-                ),
-              ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );

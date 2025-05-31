@@ -3,7 +3,7 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 
 class AuditScreen extends StatefulWidget {
-  const AuditScreen({Key? key}) : super(key: key);
+  const AuditScreen({super.key});
 
   @override
   State<AuditScreen> createState() => _AuditScreenState();
@@ -237,7 +237,11 @@ class TabBarHeader extends StatelessWidget {
   final int selectedTab;
   final Function(int) onTabChange;
 
-  const TabBarHeader({required this.selectedTab, required this.onTabChange});
+  const TabBarHeader({
+    super.key,
+    required this.selectedTab,
+    required this.onTabChange,
+  });
 
   @override
   Widget build(BuildContext context) {
