@@ -3,6 +3,7 @@ import 'package:animated_text_kit/animated_text_kit.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_application/src/common_widgets/custom_text_fild.dart';
 import 'package:flutter_application/src/components/admin_access_dialog.dart';
+import 'package:flutter_application/src/config/app_data.dart' as appData;
 import 'package:flutter_application/src/models/user_model.dart';
 import 'package:flutter_application/src/pages_routes/app_pages.dart';
 import 'package:flutter_application/src/services/user_controller.dart';
@@ -32,7 +33,7 @@ class _SignInScreenState extends State<SignInScreen> {
       isLoading = true;
     });
 
-    final url = Uri.parse('http://10.0.2.2:3000/logar');
+    final url = Uri.parse('http://192.168.0.10:3000/logar');
     final body = {
       'email': emailController.text.trim(),
       'senha': passwordController.text.trim(),
@@ -48,16 +49,16 @@ class _SignInScreenState extends State<SignInScreen> {
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
 
-        // Atualiza o usuário no UserController
-        userController.setUser(
-          UserModel(
-            name: data['name'] ?? '',
-            email: emailController.text.trim(),
-            phone: data['phone'] ?? '',
-            cpf: data['cpf'] ?? '',
-            password: passwordController.text.trim(),
-          ),
-        );
+        print('DEBUG LOGIN: $data'); // Veja a resposta no console!
+
+        // Agora pegue o usuário dentro da chave "dados":
+        final userJson = data['dados'];
+        final user = UserModel.fromJson(userJson);
+        userController.setUser(user);
+        appData.user = user; // ou appData.updateUser(user);
+
+        userController.setUser(UserModel.fromJson(userJson));
+        print('DEBUG USER APÓS LOGIN: ${userController.user}');
 
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Login realizado com sucesso!')),
@@ -66,7 +67,11 @@ class _SignInScreenState extends State<SignInScreen> {
         Get.offAllNamed(PagesRoutes.BaseRoute);
       } else {
         final errorMessage =
-            jsonDecode(response.body)['message'] ?? 'Erro ao fazer login';
+            jsonDecode(
+              response.body,
+            )['mensagem'] ?? // se backend usa "mensagem"
+            jsonDecode(response.body)['erro'] ?? // se backend usa "erro"
+            'Erro ao fazer login';
         ScaffoldMessenger.of(
           context,
         ).showSnackBar(SnackBar(content: Text(errorMessage)));
@@ -161,7 +166,7 @@ class _SignInScreenState extends State<SignInScreen> {
                       ),
                     ),
                     child: SingleChildScrollView(
-                      physics: const NeverScrollableScrollPhysics(),
+                      physics: const BouncingScrollPhysics(),
                       child: ConstrainedBox(
                         constraints: BoxConstraints(
                           minHeight: constraints.maxHeight,

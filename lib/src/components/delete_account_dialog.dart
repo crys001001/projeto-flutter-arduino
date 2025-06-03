@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_application/src/services/user_services.dart';
+import 'package:flutter_application/src/config/app_data.dart' as appData;
 
 class DeleteAccountDialog extends StatefulWidget {
   const DeleteAccountDialog({super.key});
@@ -29,7 +30,10 @@ class _DeleteAccountDialogState extends State<DeleteAccountDialog> {
 
     setState(() => _isLoading = true);
 
-    final success = await UserService.deleteAccount(password: password);
+    final success = await UserService.deleteAccount(
+      email: appData.user?.email ?? '',
+      password: _passwordController.text.trim(),
+    );
 
     setState(() => _isLoading = false);
 

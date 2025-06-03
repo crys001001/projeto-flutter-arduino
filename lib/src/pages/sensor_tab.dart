@@ -35,21 +35,23 @@ class _SensorTabState extends State<SensorTab> {
         widget.dataStream != null) {
       _isConnected = true;
       _sub = widget.dataStream!.listen(
-        _onData,
+        _onData, // <-- já vai reconhecer como async!
         onDone: _onDone,
         onError: (_) => _onDone(),
       );
     }
   }
 
-  void _onData(Uint8List data) {
+  // Torne async para poder usar await dentro dela!
+  Future<void> _onData(Uint8List data) async {
     if (_isDisposed) return;
     _buffer += ascii.decode(data);
     final parts = _buffer.split('\n');
     _buffer = parts.removeLast();
 
     for (var msg in parts) {
-      if (msg.trim().contains('Movimento detectado') && mounted) {
+      print('Recebido do Arduino: $msg'); // Para debug
+      if (msg.trim() == '1' && mounted) {
         setState(() {
           _contador++;
           _ledAceso = true;
@@ -58,40 +60,19 @@ class _SensorTabState extends State<SensorTab> {
           ).format(DateTime.now());
           _registros.add('Entrada $_contador em $agora');
         });
+        final url = Uri.parse('http://192.168.0.10:3000/alerta');
+        final body = {'sinal': 'ok'};
 
-        // Envia dado para API
-        _salvarRegistroSensor(_contador, DateTime.now());
+        await http.post(
+          url,
+          headers: {'Content-Type': 'application/json'},
+          body: jsonEncode(body),
+        );
 
         Future.delayed(const Duration(seconds: 2), () {
           if (mounted) setState(() => _ledAceso = false);
         });
       }
-    }
-  }
-
-  Future<void> _salvarRegistroSensor(int contador, DateTime timestamp) async {
-    final url = Uri.parse(
-      'https://sua-api.com/sensor/registro',
-    ); // altere para sua URL da API
-    final body = {
-      'entrada': contador.toString(),
-      'timestamp': timestamp.toIso8601String(),
-    };
-
-    try {
-      final response = await http.post(
-        url,
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode(body),
-      );
-
-      if (response.statusCode == 200 || response.statusCode == 201) {
-        debugPrint('Registro salvo com sucesso');
-      } else {
-        debugPrint('Erro ao salvar registro: ${response.statusCode}');
-      }
-    } catch (e) {
-      debugPrint('Erro na requisição: $e');
     }
   }
 
@@ -159,14 +140,6 @@ class _SensorTabState extends State<SensorTab> {
                       title: Text(_registros[i]),
                     ),
               ),
-            ),
-            ElevatedButton(
-              onPressed: () {
-                _sub?.cancel();
-                widget.connection?.dispose();
-                Navigator.pop(context);
-              },
-              child: const Text('Desconectar'),
             ),
           ],
         ),

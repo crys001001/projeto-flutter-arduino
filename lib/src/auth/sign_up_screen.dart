@@ -1,8 +1,6 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'package:flutter_application/src/base/base_screen.dart';
 import 'package:flutter_application/src/common_widgets/custom_text_fild.dart';
-
 import 'package:flutter_application/src/models/user_model.dart';
 import 'package:flutter_application/src/pages_routes/app_pages.dart';
 import 'package:flutter_application/src/services/user_controller.dart';
@@ -47,11 +45,11 @@ class _SignUpScreenState extends State<SignUpScreen> {
       isLoading = true;
     });
 
-    final url = Uri.parse('http://10.0.2.2:3000/cadastrar');
+    final url = Uri.parse('http://192.168.0.10:3000/cadastrar');
     final body = {
-      'name': nameController.text.trim(),
+      'nome': nameController.text.trim(),
       'email': emailController.text.trim(),
-      'phone': phoneController.text.trim(),
+      'celular': phoneController.text.trim(),
       'cpf': cpfController.text.trim(),
       'senha': passwordController.text.trim(),
     };
@@ -62,6 +60,8 @@ class _SignUpScreenState extends State<SignUpScreen> {
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode(body),
       );
+
+      print('Resposta do backend: ${response.body}'); // Para debug
 
       if (response.statusCode == 201) {
         // Atualiza o usuário no UserController
@@ -148,137 +148,123 @@ class _SignUpScreenState extends State<SignUpScreen> {
             ),
             Flexible(
               flex: 1,
-              child: LayoutBuilder(
-                builder: (context, constraints) {
-                  return Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 32,
-                      vertical: 24,
-                    ),
-                    decoration: const BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.vertical(
-                        top: Radius.circular(45),
-                      ),
-                    ),
-                    child: SingleChildScrollView(
-                      physics: const NeverScrollableScrollPhysics(),
-                      child: ConstrainedBox(
-                        constraints: BoxConstraints(
-                          minHeight: constraints.maxHeight,
+              child: Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 32,
+                  vertical: 24,
+                ),
+                decoration: const BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.vertical(top: Radius.circular(45)),
+                ),
+                child: SingleChildScrollView(
+                  child: Form(
+                    key: _formKey,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        CustomTextFild(
+                          controller: nameController,
+                          icon: Icons.person,
+                          label: 'Nome',
+                          validator: (value) {
+                            if (value == null || value.isEmpty) {
+                              return 'Informe o nome';
+                            }
+                            return null;
+                          },
                         ),
-                        child: IntrinsicHeight(
-                          child: Form(
-                            key: _formKey,
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.stretch,
-                              children: [
-                                CustomTextFild(
-                                  controller: nameController,
-                                  icon: Icons.person,
-                                  label: 'Nome',
-                                  validator: (value) {
-                                    if (value == null || value.isEmpty) {
-                                      return 'Informe o nome';
-                                    }
-                                    return null;
-                                  },
-                                ),
-                                const SizedBox(height: 12),
-                                CustomTextFild(
-                                  controller: emailController,
-                                  icon: Icons.email,
-                                  label: 'Email',
-                                  validator: emailValidator,
-                                  textInputType: TextInputType.emailAddress,
-                                ),
-                                const SizedBox(height: 12),
-                                CustomTextFild(
-                                  controller: phoneController,
-                                  icon: Icons.phone,
-                                  label: 'Telefone',
-                                  validator: (value) {
-                                    if (value == null || value.isEmpty) {
-                                      return 'Informe o telefone';
-                                    }
-                                    if (!RegExp(
-                                      r'^\d{2} \d \d{4}-\d{4}$',
-                                    ).hasMatch(value)) {
-                                      return 'Telefone inválido';
-                                    }
-                                    return null;
-                                  },
-                                  inputFormatters: [phoneFormatter],
-                                  textInputType: TextInputType.phone,
-                                ),
-                                const SizedBox(height: 12),
-                                CustomTextFild(
-                                  controller: cpfController,
-                                  icon: Icons.assignment_ind,
-                                  label: 'CPF',
-                                  validator: (value) {
-                                    if (value == null || value.isEmpty) {
-                                      return 'Informe o CPF';
-                                    }
-                                    if (!RegExp(
-                                      r'^\d{3}\.\d{3}\.\d{3}-\d{2}$',
-                                    ).hasMatch(value)) {
-                                      return 'CPF inválido';
-                                    }
-                                    return null;
-                                  },
-                                  inputFormatters: [cpffomartter],
-                                  textInputType: TextInputType.number,
-                                ),
-                                const SizedBox(height: 12),
-                                CustomTextFild(
-                                  controller: passwordController,
-                                  icon: Icons.lock,
-                                  label: 'Senha',
-                                  isSecret: true,
-                                  validator: passwordValidator,
-                                ),
-                                const SizedBox(height: 16),
-                                SizedBox(
-                                  height: 50,
-                                  child: ElevatedButton(
-                                    style: ElevatedButton.styleFrom(
-                                      backgroundColor: Colors.blueAccent,
-                                      foregroundColor: Colors.white,
-                                      shape: RoundedRectangleBorder(
-                                        borderRadius: BorderRadius.circular(18),
-                                      ),
-                                    ),
-                                    onPressed: isLoading ? null : signUp,
-                                    child:
-                                        isLoading
-                                            ? const CircularProgressIndicator(
-                                              color: Colors.white,
-                                            )
-                                            : const Text(
-                                              'Criar Conta',
-                                              style: TextStyle(fontSize: 18),
-                                            ),
-                                  ),
-                                ),
-                                const SizedBox(height: 20),
-                                TextButton(
-                                  onPressed: () {
-                                    Get.back();
-                                  },
-                                  child: const Text(
-                                    'Já tenho conta',
-                                    style: TextStyle(color: Colors.blueAccent),
-                                  ),
-                                ),
-                              ],
+                        const SizedBox(height: 12),
+                        CustomTextFild(
+                          controller: emailController,
+                          icon: Icons.email,
+                          label: 'Email',
+                          validator: emailValidator,
+                          textInputType: TextInputType.emailAddress,
+                        ),
+                        const SizedBox(height: 12),
+                        CustomTextFild(
+                          controller: phoneController,
+                          icon: Icons.phone,
+                          label: 'Telefone',
+                          validator: (value) {
+                            if (value == null || value.isEmpty) {
+                              return 'Informe o telefone';
+                            }
+                            if (!RegExp(
+                              r'^\d{2} \d \d{4}-\d{4}$',
+                            ).hasMatch(value)) {
+                              return 'Telefone inválido';
+                            }
+                            return null;
+                          },
+                          inputFormatters: [phoneFormatter],
+                          textInputType: TextInputType.phone,
+                        ),
+                        const SizedBox(height: 12),
+                        CustomTextFild(
+                          controller: cpfController,
+                          icon: Icons.assignment_ind,
+                          label: 'CPF',
+                          validator: (value) {
+                            if (value == null || value.isEmpty) {
+                              return 'Informe o CPF';
+                            }
+                            if (!RegExp(
+                              r'^\d{3}\.\d{3}\.\d{3}-\d{2}$',
+                            ).hasMatch(value)) {
+                              return 'CPF inválido';
+                            }
+                            return null;
+                          },
+                          inputFormatters: [cpffomartter],
+                          textInputType: TextInputType.number,
+                        ),
+                        const SizedBox(height: 12),
+                        CustomTextFild(
+                          controller: passwordController,
+                          icon: Icons.lock,
+                          label: 'Senha',
+                          isSecret: true,
+                          validator: passwordValidator,
+                        ),
+                        const SizedBox(height: 16),
+                        SizedBox(
+                          height: 50,
+                          child: ElevatedButton(
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.blueAccent,
+                              foregroundColor: Colors.white,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(18),
+                              ),
                             ),
+                            onPressed: isLoading ? null : signUp,
+                            child:
+                                isLoading
+                                    ? const CircularProgressIndicator(
+                                      color: Colors.white,
+                                    )
+                                    : const Text(
+                                      'Criar Conta',
+                                      style: TextStyle(fontSize: 18),
+                                    ),
                           ),
                         ),
-                      ),
+                        const SizedBox(height: 20),
+                        TextButton(
+                          onPressed: () {
+                            Get.back();
+                          },
+                          child: const Text(
+                            'Já tenho conta',
+                            style: TextStyle(color: Colors.blueAccent),
+                          ),
+                        ),
+                      ],
                     ),
-                  );
-                },
+                  ),
+                ),
               ),
             ),
           ],

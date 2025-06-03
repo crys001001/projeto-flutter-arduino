@@ -16,11 +16,11 @@ class UserModel {
   // Cria uma instância a partir de um JSON (mapa)
   factory UserModel.fromJson(Map<String, dynamic> json) {
     return UserModel(
-      name: json['name'] ?? '',
+      name: json['name'] ?? json['nome'] ?? '',
       email: json['email'] ?? '',
-      phone: json['phone'] ?? '',
+      phone: json['phone'] ?? json['celular'] ?? '',
       cpf: json['cpf'] ?? '',
-      password: json['password'] ?? '',
+      password: json['password'] ?? json['senha'] ?? '',
     );
   }
 
@@ -32,4 +32,21 @@ class UserModel {
     'cpf': cpf,
     'password': password,
   };
+
+  // Adicionado: Método copyWith
+  UserModel copyWith({
+    String? name,
+    String? email,
+    String? phone,
+    String? cpf,
+    String? password,
+  }) {
+    return UserModel(
+      name: name ?? this.name,
+      email: email ?? this.email,
+      phone: phone ?? this.phone,
+      cpf: cpf ?? this.cpf,
+      password: password ?? this.password,
+    );
+  }
 }

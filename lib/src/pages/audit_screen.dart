@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_application/src/components/logs_details_dialog.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 
@@ -18,8 +19,7 @@ class _AuditScreenState extends State<AuditScreen> {
   List<Map<String, dynamic>> users = [];
   List<Map<String, dynamic>> logs = [];
 
-  final String baseUrl =
-      'http://SEU_IP:SEU_PORTA'; // 🔁 Substitua pelo endereço real da sua API
+  final String baseUrl = 'http://192.168.0.10:3000/admin';
 
   int selectedTab = 0;
 
@@ -27,11 +27,14 @@ class _AuditScreenState extends State<AuditScreen> {
   void initState() {
     super.initState();
     fetchUsers();
+    fetchLogs();
   }
 
   Future<void> fetchUsers() async {
     try {
-      final response = await http.get(Uri.parse('$baseUrl/usuarios'));
+      final response = await http.get(
+        Uri.parse('http://192.168.0.10:3000/usuarios'),
+      );
       if (response.statusCode == 200) {
         final List<dynamic> data = json.decode(response.body);
         setState(() {
@@ -45,25 +48,36 @@ class _AuditScreenState extends State<AuditScreen> {
     }
   }
 
-  Future<void> deleteUser(int userId) async {
-    final user = users.firstWhere((u) => u['id'] == userId, orElse: () => {});
+  Future<void> fetchLogs() async {
     try {
-      final response = await http.delete(
-        Uri.parse('$baseUrl/usuarios/$userId'),
+      final response = await http.get(
+        Uri.parse('http://192.168.0.10:3000/logs'),
+      );
+      if (response.statusCode == 200) {
+        final List<dynamic> data = json.decode(response.body);
+        setState(() {
+          logs = data.cast<Map<String, dynamic>>();
+        });
+      } else {
+        print('Erro ao buscar logs: ${response.statusCode}');
+      }
+    } catch (e) {
+      print('Erro ao buscar logs: $e');
+    }
+  }
+
+  Future<void> deleteUser(String userEmail) async {
+    try {
+      final response = await http.put(
+        Uri.parse('http://192.168.0.10:3000/deletar'),
+        headers: {'Content-Type': 'application/json'},
+        body: json.encode({'email': userEmail}),
       );
       if (response.statusCode == 200 || response.statusCode == 204) {
         setState(() {
-          users.removeWhere((u) => u['id'] == userId);
-          logs.add({
-            'id': DateTime.now().millisecondsSinceEpoch,
-            'usuario': user['nome'],
-            'acao': 'excluiu',
-            'hora': DateTime.now().toString(),
-            'campo': 'usuário',
-            'valorAntigo': user['nome'],
-            'valorNovo': 'Usuário removido',
-          });
+          users.removeWhere((u) => u['email'] == userEmail);
         });
+        fetchLogs(); // Atualize os logs após exclusão
       } else {
         print('Erro ao excluir usuário: ${response.statusCode}');
       }
@@ -74,46 +88,17 @@ class _AuditScreenState extends State<AuditScreen> {
 
   List<Map<String, dynamic>> getFilteredLogs() {
     return logs.where((log) {
-      final matchesAction =
-          selectedAction == 'Todos' || log['acao'] == selectedAction;
-      final matchesSearch = log['usuario'].toString().toLowerCase().contains(
-        searchQuery.toLowerCase(),
-      );
+      final acao =
+          (log['tipo_acao'] ?? log['acao'] ?? '').toString().toLowerCase();
+      final usuario =
+          (log['nome_usuario'] ?? log['usuario'] ?? '')
+              .toString()
+              .toLowerCase();
+
+      final matchesAction = selectedAction == 'Todos' || acao == selectedAction;
+      final matchesSearch = usuario.contains(searchQuery.toLowerCase());
       return matchesAction && matchesSearch;
     }).toList();
-  }
-
-  void showLogDetails(Map<String, dynamic> log) {
-    showDialog(
-      context: context,
-      builder:
-          (_) => AlertDialog(
-            title: Text('Detalhes da Ação'),
-            content: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text('ID: ${log['id']}'),
-                Text('Admin: ${log['usuario']}'),
-                Text('Ação: ${log['acao']}'),
-                Text('Hora: ${log['hora']}'),
-                if (log['acao'] == 'editou') ...[
-                  Text('Campo: ${log['campo']}'),
-                  Text('Valor antigo: ${log['valorAntigo']}'),
-                  Text('Valor novo: ${log['valorNovo']}'),
-                ],
-                if (log['acao'] == 'excluiu')
-                  Text('Item excluído: ${log['valorAntigo']}'),
-                if (log['acao'] == 'inseriu') Text('Registro inserido'),
-              ],
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context),
-                child: Text('Fechar'),
-              ),
-            ],
-          ),
-    );
   }
 
   @override
@@ -145,9 +130,10 @@ class _AuditScreenState extends State<AuditScreen> {
   Widget buildUserTab() {
     final filteredUsers =
         users.where((user) {
-          return user['nome'].toString().toLowerCase().contains(
-            userSearch.toLowerCase(),
-          );
+          return (user['nome'] ?? user['name'] ?? '')
+              .toString()
+              .toLowerCase()
+              .contains(userSearch.toLowerCase());
         }).toList();
 
     return Padding(
@@ -174,10 +160,47 @@ class _AuditScreenState extends State<AuditScreen> {
               itemBuilder: (_, index) {
                 final user = filteredUsers[index];
                 return ListTile(
-                  title: Text(user['nome']),
+                  title: Text(
+                    user['nome'] ?? user['name'] ?? 'Usuário sem nome',
+                  ),
+                  subtitle: Text(user['email'] ?? ''),
                   trailing: IconButton(
                     icon: Icon(Icons.delete, color: Colors.red),
-                    onPressed: () => deleteUser(user['id']),
+                    onPressed: () async {
+                      final confirm = await showDialog<bool>(
+                        context: context,
+                        builder:
+                            (context) => AlertDialog(
+                              title: Text('Confirmar exclusão'),
+                              content: Text(
+                                'Tem certeza que deseja excluir este usuário?',
+                              ),
+                              actions: [
+                                TextButton(
+                                  onPressed:
+                                      () => Navigator.pop(context, false),
+                                  child: Text('Cancelar'),
+                                ),
+                                TextButton(
+                                  onPressed: () => Navigator.pop(context, true),
+                                  child: Text(
+                                    'Excluir',
+                                    style: TextStyle(color: Colors.red),
+                                  ),
+                                ),
+                              ],
+                            ),
+                      );
+
+                      if (confirm == true) {
+                        await deleteUser(user['email']);
+                        if (mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(content: Text('Usuário excluído!')),
+                          );
+                        }
+                      }
+                    },
                   ),
                 );
               },
@@ -202,15 +225,34 @@ class _AuditScreenState extends State<AuditScreen> {
             ),
             onChanged: (value) => setState(() => searchQuery = value),
           ),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-            children:
-                ['Todos', 'inseriu', 'editou', 'excluiu'].map((action) {
-                  return ElevatedButton(
-                    onPressed: () => setState(() => selectedAction = action),
-                    child: Text(action),
-                  );
-                }).toList(),
+          const SizedBox(height: 8),
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: Row(
+              children:
+                  ['Todos', 'inseriu', 'editou', 'excluiu'].map((action) {
+                    return Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 4.0),
+                      child: ElevatedButton(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor:
+                              selectedAction == action
+                                  ? Colors.blueAccent
+                                  : Colors.grey[200],
+                          foregroundColor:
+                              selectedAction == action
+                                  ? Colors.white
+                                  : Colors.black,
+                          elevation: 0,
+                          minimumSize: const Size(80, 40),
+                        ),
+                        onPressed:
+                            () => setState(() => selectedAction = action),
+                        child: Text(action),
+                      ),
+                    );
+                  }).toList(),
+            ),
           ),
           Expanded(
             child: ListView.builder(
@@ -220,9 +262,16 @@ class _AuditScreenState extends State<AuditScreen> {
                 return ListTile(
                   leading: Icon(Icons.history),
                   title: Text(
-                    '${log['usuario']} ${log['acao']} - ${log['hora'].toString().substring(0, 16)}',
+                    '${log['nome_usuario'] ?? log['usuario'] ?? 'null'} '
+                    '${(log['tipo_acao'] ?? log['acao'] ?? '').toString()} - '
+                    '${log['data_hora']?.toString().substring(0, 16) ?? ''}',
                   ),
-                  onTap: () => showLogDetails(log),
+                  onTap: () {
+                    showDialog(
+                      context: context,
+                      builder: (_) => LogDetailsDialog(log: log),
+                    );
+                  },
                 );
               },
             ),

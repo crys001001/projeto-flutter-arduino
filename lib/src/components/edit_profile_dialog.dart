@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_application/src/common_widgets/custom_text_fild.dart';
 import 'package:flutter_application/src/config/app_data.dart' as appData;
 import 'package:flutter_application/src/services/user_services.dart';
+import 'package:get/get.dart';
+import 'package:flutter_application/src/services/user_controller.dart';
 
 class EditProfileDialog extends StatefulWidget {
   const EditProfileDialog({super.key});
@@ -15,15 +17,24 @@ class _EditProfileDialogState extends State<EditProfileDialog> {
   late final TextEditingController _nameController;
   late final TextEditingController _phoneController;
   late final TextEditingController _emailController;
+  late final TextEditingController _passwordController;
   bool _isLoading = false;
+
+  late String oldEmail;
+
+  // Use o UserController para acessar o usuário
+  final UserController userController = Get.find<UserController>();
 
   @override
   void initState() {
     super.initState();
-    _nameController = TextEditingController(text: appData.user?.name ?? '');
-    _phoneController = TextEditingController(text: appData.user?.phone ?? '');
-    _emailController = TextEditingController(text: appData.user?.email ?? '');
+    final user = userController.user; // Mudança aqui!
+    _nameController = TextEditingController(text: user?.name ?? '');
+    _phoneController = TextEditingController(text: user?.phone ?? '');
+    _emailController = TextEditingController(text: user?.email ?? '');
     _passwordController = TextEditingController();
+    oldEmail = user?.email ?? '';
+    print('DEBUG OLD EMAIL initState: $oldEmail'); // Agora não fica mais vazio!
   }
 
   @override
@@ -31,6 +42,7 @@ class _EditProfileDialogState extends State<EditProfileDialog> {
     _nameController.dispose();
     _phoneController.dispose();
     _emailController.dispose();
+    _passwordController.dispose();
     super.dispose();
   }
 
@@ -43,18 +55,21 @@ class _EditProfileDialogState extends State<EditProfileDialog> {
       name: _nameController.text.trim(),
       phone: _phoneController.text.trim(),
       email: _emailController.text.trim(),
+      password: _passwordController.text.trim(),
+      oldEmail: oldEmail, // Aqui está OK!
     );
 
+    if (!mounted) return;
     setState(() => _isLoading = false);
 
     if (success) {
-      // Atualiza o usuário global
       if (appData.user != null) {
         appData.updateUser(
           appData.user!.copyWith(
             name: _nameController.text.trim(),
             phone: _phoneController.text.trim(),
             email: _emailController.text.trim(),
+            password: _passwordController.text.trim(),
           ),
         );
       }
@@ -122,9 +137,24 @@ class _EditProfileDialogState extends State<EditProfileDialog> {
                       icon: Icons.email,
                       label: 'Email',
                       validator: (value) {
-                        if (value == null || value.isEmpty)
+                        if (value == null || value.isEmpty) {
                           return 'Informe seu e-mail';
-                        if (!value.contains('@')) return 'E-mail inválido';
+                        }
+                        if (!value.contains('@')) {
+                          return 'E-mail inválido';
+                        }
+                        return null;
+                      },
+                    ),
+                    CustomTextFild(
+                      controller: _passwordController,
+                      icon: Icons.lock,
+                      label: 'Senha',
+                      isSecret: true,
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return 'Informe sua senha';
+                        }
                         return null;
                       },
                     ),

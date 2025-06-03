@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_application/src/config/app_data.dart' as appData;
+import 'package:flutter_application/src/services/user_controller.dart';
+import 'package:get/get.dart';
 import 'package:flutter_application/src/components/edit_profile_dialog.dart';
 
 class DadosUserDialog extends StatelessWidget {
@@ -7,7 +8,7 @@ class DadosUserDialog extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final user = appData.user;
+    final user = Get.find<UserController>().user;
 
     return AlertDialog(
       title: const Text('Dados do Usuário'),
@@ -32,7 +33,7 @@ class DadosUserDialog extends StatelessWidget {
         ),
         TextButton(
           onPressed: () {
-            Navigator.of(context).pop(); // Fecha o dialog de dados
+            Navigator.of(context).pop();
             showDialog(
               context: context,
               builder: (_) => const EditProfileDialog(),
